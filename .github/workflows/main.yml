@@ -1,0 +1,39 @@
+name: DAST Demo Env
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  dast:
+    runs-on: ubuntu-latest
+    name: DAST on Prem Testing Action
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Create Output folder
+        run: mkdir ${{ runner.temp }}/output
+      - name: Change dir owner
+        run: sudo chown -R 1000:1000 ${{ runner.temp }}/output
+      - name: Run DAST-CLI command
+        run: |
+           docker run --pull=always \
+           -v ${{ runner.temp }}/output:/tmp \
+           -e CX_APIKEY=eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJkYzRkOGI5ZC0xMTA5LTQxMzUtOWNhOS0wOTRmOTQ2MzVjZGEifQ.eyJpYXQiOjE3OTE5MDg1MDQsImp0aSI6IjY5MjkyYjNjLWI2YTYtNDBmMi1hNGI2LTM0NTEzZDVlNjVmZSIsImlzcyI6Imh0dHBzOi8vY3hvbmUuY2hlY2ttYXJ4LWdvdi5jb20vYXV0aC9yZWFsbXMvY2hlY2ttYXJ4LWdvdiIsImF1ZCI6Imh0dHBzOi8vY3hvbmUuY2hlY2ttYXJ4LWdvdi5jb20vYXV0aC9yZWFsbXMvY2hlY2ttYXJ4LWdvdiIsInN1YiI6ImY0MDU0YjU3LTBkYWYtNGExZi05OTQwLWU2ZTg3YzlmNGJiNiIsInR5cCI6Ik9mZmxpbmUiLCJhenAiOiJhc3QtYXBwIiwic2lkIjoiOTI5NWIxYjYtNDkxZi00NmZkLWE3NDYtZDY4MjhmMjBlODAxIiwic2NvcGUiOiJhc3QtYXBpIHJvbGVzIGlhbS1hcGkgcHJvZmlsZSBlbWFpbCBvZmZsaW5lX2FjY2VzcyIsImF1ZF94IjpbInJlYWxtLW1hbmFnZW1lbnQiLCJhY2NvdW50Il0sInByb3YiOiJkZWZhdWx0In0.LlAIuFh2o6ELLLv29yKPFItd1NanoO5Pr_NaDIH79hNAsAOyLv0DW0fCcuGsjRcSy1-BW6E3RGlCKjOXoi-uMA \
+           checkmarx/dast:latest \
+           scan \
+           --environment-id=4ed6230d-3493-48cd-8a70-73f08e727ed0 \
+           --base-url=https://cxone.checkmarx-gov.com \
+           --output=/tmp
+           
+      - name: Set permission on output folder
+        run: |
+         sudo chown -R 1001:1001 ${{ runner.temp }}/output
+      - name: Upload ZAP output
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        if: always()
+        with:
+          name: zap-output
+          path: ${{ runner.temp }}/output
